@@ -94,7 +94,11 @@ export async function storeTranscriptSegment(segment: TranscriptSegment) {
 }
 
 // Search for transcript segments similar to the query embedding
-export async function searchTranscripts(queryEmbedding: number[], limit: number = 5) {
+export async function searchTranscripts(
+  queryEmbedding: number[], 
+  limit: number = 10,
+  similarityThreshold: number = 0.6
+) {
   const client = await pool.connect();
   try {
     // Convert the query embedding array to a pgvector compatible format
@@ -110,10 +114,11 @@ export async function searchTranscripts(queryEmbedding: number[], limit: number 
         text_content,
         1 - (embedding <=> $1::vector) as similarity
       FROM transcript_segments
+      WHERE 1 - (embedding <=> $1::vector) > $3
       ORDER BY embedding <=> $1::vector
       LIMIT $2
       `,
-      [embeddingStr, limit]
+      [embeddingStr, limit, similarityThreshold]
     );
     
     return result.rows;

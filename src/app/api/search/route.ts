@@ -23,8 +23,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Generate embedding for the query text
     const queryEmbedding = await generateEmbedding(queryText);
     
-    // Search for similar transcript segments
-    const results = await searchTranscripts(queryEmbedding, 10);
+    // Search for similar transcript segments with improved settings
+    const results = await searchTranscripts(queryEmbedding, 15, 0.6);
     
     // Transform the results to match the SearchResult type
     const searchResults: SearchResult[] = results.map(row => ({

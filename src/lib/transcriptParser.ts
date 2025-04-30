@@ -80,9 +80,40 @@ export function parseTranscript(content: string, fileName: string): TranscriptSe
 }
 
 /**
+ * Clean transcript segments to improve embedding quality
+ * 
+ * @param segment The transcript segment to clean
+ * @returns The cleaned segment
+ */
+export function cleanTranscriptSegment(segment: TranscriptSegment): TranscriptSegment {
+  // Create a copy of the segment to avoid modifying the original
+  const cleanedSegment = { ...segment };
+  
+  // Clean the text content
+  if (cleanedSegment.text_content) {
+    // Remove redundant whitespace
+    cleanedSegment.text_content = cleanedSegment.text_content.trim().replace(/\s+/g, ' ');
+    
+    // Remove any speaker identifiers like "[Speaker]:" or "Speaker:"
+    cleanedSegment.text_content = cleanedSegment.text_content.replace(/^\s*\[?[A-Za-z\s]+\]?:\s*/g, '');
+    
+    // Remove any non-content markers like "[inaudible]", "[music]", etc.
+    cleanedSegment.text_content = cleanedSegment.text_content.replace(/\[\w+\]/g, '');
+    
+    // Clean up any orphaned punctuation caused by the above removals
+    cleanedSegment.text_content = cleanedSegment.text_content.replace(/\s+([.,;:!?])/g, '$1');
+    cleanedSegment.text_content = cleanedSegment.text_content.replace(/([.,;:!?])\s+([.,;:!?])/g, '$1$2');
+    
+    // Final trim and whitespace normalization
+    cleanedSegment.text_content = cleanedSegment.text_content.trim().replace(/\s+/g, ' ');
+  }
+  
+  return cleanedSegment;
+}
+
+/**
  * Apply additional chunking to transcript segments if needed
  * This function can be extended to implement more sophisticated chunking strategies
- * Currently, it just returns the original segments
  * 
  * @param segments The original transcript segments
  * @param maxTokens Optional maximum token count per chunk
@@ -92,11 +123,15 @@ export function chunkTranscriptSegments(
   segments: TranscriptSegment[],
   maxTokens: number = 500
 ): TranscriptSegment[] {
+  // Clean each segment
+  const cleanedSegments = segments.map(cleanTranscriptSegment);
+  
+  // Additional chunking logic (not yet implemented)
   // For now, we're treating each segment as a chunk
   // In a more advanced implementation, you might want to:
   // 1. Split very long segments into smaller chunks
   // 2. Combine very small segments
   // 3. Apply more sophisticated chunking strategies
   
-  return segments;
+  return cleanedSegments;
 }

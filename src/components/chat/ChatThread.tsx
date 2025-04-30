@@ -122,17 +122,55 @@ export default function ChatThread() {
           
           {showContext && context.length > 0 && (
             <div className="w-1/3 border-l overflow-y-auto p-3 bg-gray-50">
-              <h3 className="font-medium text-sm mb-2">Source Segments</h3>
-              {context.map((item, i) => (
-                <div key={i} className="mb-3 p-2 border rounded bg-white text-xs">
-                  <div className="font-medium truncate">{item.source}</div>
-                  <div className="text-gray-500 mb-1">
-                    {item.start} {item.end ? `- ${item.end}` : ''}
-                    <span className="ml-1 px-1 bg-blue-100 rounded text-blue-800">
-                      {(item.similarity * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="text-gray-700">{item.text.substring(0, 150)}...</div>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-medium text-sm">Source Segments ({context.length})</h3>
+                <div className="text-xs text-gray-500">
+                  {context.length > 0 && `Showing ${context.length} relevant segments`}
+                </div>
+              </div>
+              
+              {/* Group segments by source file */}
+              {Object.entries(
+                context.reduce((groups, item) => {
+                  const source = item.source;
+                  if (!groups[source]) groups[source] = [];
+                  groups[source].push(item);
+                  return groups;
+                }, {} as Record<string, ChatContext[]>)
+              ).map(([source, items]) => (
+                <div key={source} className="mb-4">
+                  <div className="font-medium text-xs bg-gray-100 p-1 rounded mb-2">{source}</div>
+                  {items
+                    .sort((a, b) => b.similarity - a.similarity) // Sort by similarity within group
+                    .map((item, i) => (
+                      <div 
+                        key={i} 
+                        className="mb-3 p-2 border rounded bg-white text-xs hover:border-blue-300 transition-colors"
+                        style={{ 
+                          borderLeft: `3px solid ${
+                            item.similarity > 0.8 ? 'rgb(59, 130, 246)' : // blue-500
+                            item.similarity > 0.7 ? 'rgb(14, 165, 233)' : // sky-500
+                            'rgb(186, 230, 253)' // sky-200
+                          }`
+                        }}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="text-gray-500 text-xs">
+                            {item.start.replace(/,\d+$/, '')} {item.end ? `- ${item.end.replace(/,\d+$/, '')}` : ''}
+                          </div>
+                          <span className="px-1 bg-blue-100 rounded text-blue-800 text-xs font-medium">
+                            {(item.similarity * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="text-gray-700 mt-1 whitespace-pre-line">
+                          {item.text.length > 200 
+                            ? `${item.text.substring(0, 200)}...` 
+                            : item.text
+                          }
+                        </div>
+                      </div>
+                    ))
+                  }
                 </div>
               ))}
             </div>
